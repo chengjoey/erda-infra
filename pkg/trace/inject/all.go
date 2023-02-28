@@ -16,7 +16,9 @@ package inject
 
 import (
 	"log"
+	"os"
 
+	otelpyroscope "github.com/pyroscope-io/otel-profiling-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -36,6 +38,14 @@ func Init(opt ...sdktrace.TracerProviderOption) {
 		}
 	}()
 	tp := sdktrace.NewTracerProvider(opt...)
-	otel.SetTracerProvider(tp)
+
+	otel.SetTracerProvider(otelpyroscope.NewTracerProvider(tp,
+		otelpyroscope.WithAppName(os.Getenv("DICE_SERVICE")),
+		otelpyroscope.WithPyroscopeURL("http://collector:7076"),
+		otelpyroscope.WithRootSpanOnly(false),
+		//otelpyroscope.WithAddSpanName(true),
+		//otelpyroscope.WithProfileURL(true),
+		otelpyroscope.WithProfileBaselineURL(true),
+	))
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 }
